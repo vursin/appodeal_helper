@@ -58,6 +58,13 @@ class AppodealHelper {
     if (!isSupportedPlatform || _isInitialed) return;
     _isInitialed = true;
 
+    // Nếu key không được đặt thì không hiện Ads cho platform này
+    if (_appodealKey == '') {
+      isAllowedAds = false;
+
+      return;
+    }
+
     await _getConsent();
 
     // Kiểm tra phiên bản có cho phép Ads không
@@ -84,8 +91,8 @@ class AppodealHelper {
   }
 
   static void dispose() async {
-    // Không triển khai ad ở ngoài 2 platform này
-    if (!isSupportedPlatform) return;
+    // Không triển khai ad ở ngoài 2 platform này hoặc không hỗ trợ Ads
+    if (!isSupportedPlatform || !isAllowedAds) return;
 
     await Future.wait(
       [for (final type in _appodealTypes) Appodeal.destroy(type.toAppodeal)],
