@@ -34,6 +34,8 @@ class AppodealHelper {
 
   static bool _isTesting = true;
 
+  static bool _debugLog = false;
+
   static final isSupportedPlatform =
       UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
 
@@ -45,10 +47,12 @@ class AppodealHelper {
     required String keyIOS,
     required CheckAllowAdsOption checkAllowAdsOption,
     required List<AppodealType> appodealTypes,
+    bool debugLog = false,
   }) async {
     _appodealKey = UniversalPlatform.isAndroid ? keyAndroid : keyIOS;
     _appodealTypes = appodealTypes;
     _isTesting = isTesting;
+    _debugLog = debugLog;
 
     // Không triển khai ad ở ngoài 2 platform này
     if (!isSupportedPlatform || _isInitialed) return;
@@ -65,9 +69,9 @@ class AppodealHelper {
     if (!isAllowedAds) return;
 
     await Future.wait([
-      Appodeal.setTesting(isTesting), //only not release mode
+      Appodeal.setTesting(_isTesting), //only not release mode
       Appodeal.setLogLevel(
-        isTesting ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
+        _debugLog ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
       ),
       Appodeal.muteVideosIfCallsMuted(true),
       Appodeal.setUseSafeArea(true),
@@ -167,7 +171,7 @@ class AppodealHelper {
   static Widget get mrecWidget => const _MrecAd();
 
   // ignore: avoid_print
-  static _printDebug(Object? object) => _isTesting ? print(object) : null;
+  static _printDebug(Object? object) => _debugLog ? print(object) : null;
 }
 
 class CheckAllowAdsOption {
@@ -200,7 +204,7 @@ class CheckAllowAdsOption {
 
   @override
   String toString() {
-    return 'CheckAllowAdsOption(prefVersion: $prefVersion, appVersion: $appVersion, count: $count, allowAfterCount: $allowAfterCount)';
+    return 'CheckAllowAdsOption(prefVersion: $prefVersion, appVersion: $appVersion, count: $count, allowAfterCount: $allowAfterCount, cloudAllowed: $cloudAllowed)';
   }
 }
 
@@ -214,16 +218,18 @@ class _BannerAd extends StatefulWidget {
 class _BannerAdState extends State<_BannerAd> {
   @override
   void dispose() {
-    Appodeal.hide(Appodeal.BANNER);
+    if (AppodealHelper.isAllowedAds) Appodeal.hide(Appodeal.BANNER);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return const AppodealBanner(
-      adSize: AppodealBannerSize.BANNER,
-      placement: "default",
-    );
+    return AppodealHelper.isAllowedAds
+        ? const AppodealBanner(
+            adSize: AppodealBannerSize.BANNER,
+            placement: "default",
+          )
+        : const SizedBox.shrink();
   }
 }
 
@@ -237,15 +243,17 @@ class _MrecAd extends StatefulWidget {
 class _MrecAdState extends State<_MrecAd> {
   @override
   void dispose() {
-    Appodeal.hide(Appodeal.NATIVE);
+    if (AppodealHelper.isAllowedAds) Appodeal.hide(Appodeal.MREC);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return const AppodealBanner(
-      adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
-      placement: "default",
-    );
+    return AppodealHelper.isAllowedAds
+        ? const AppodealBanner(
+            adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
+            placement: "default",
+          )
+        : const SizedBox.shrink();
   }
 }
