@@ -28,11 +28,11 @@ class AppodealHelper {
 
   static bool isAllowedAds = false;
 
-  static late String _appodealKey;
+  static String _appodealKey = '';
 
-  static late List<AppodealType> _appodealTypes;
+  static List<AppodealType> _appodealTypes = [];
 
-  static late bool _isTesting;
+  static bool _isTesting = true;
 
   static final isSupportedPlatform =
       UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
