@@ -59,7 +59,10 @@ class AppodealHelper {
     // Kiểm tra phiên bản có cho phép Ads không
     isAllowedAds =
         await _checkAllowedAds(checkAllowAdsOption: checkAllowAdsOption);
-    if (!isAllowedAds && !isTesting) return;
+
+    if (isTesting) isAllowedAds = true;
+
+    if (!isAllowedAds) return;
 
     await Future.wait([
       Appodeal.setTesting(isTesting), //only not release mode
@@ -80,9 +83,9 @@ class AppodealHelper {
     // Không triển khai ad ở ngoài 2 platform này
     if (!isSupportedPlatform) return;
 
-    for (final type in _appodealTypes) {
-      Appodeal.destroy(type.toAppodeal);
-    }
+    await Future.wait(
+      [for (final type in _appodealTypes) Appodeal.destroy(type.toAppodeal)],
+    );
   }
 
   static Future<bool> _getConsent() async {
