@@ -215,19 +215,8 @@ class CheckAllowAdsOption {
   }
 }
 
-class _BannerAd extends StatefulWidget {
+class _BannerAd extends StatelessWidget {
   const _BannerAd({Key? key}) : super(key: key);
-
-  @override
-  State<_BannerAd> createState() => _BannerAdState();
-}
-
-class _BannerAdState extends State<_BannerAd> {
-  @override
-  void dispose() {
-    if (AppodealHelper.isAllowedAds) Appodeal.hide(Appodeal.BANNER);
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,19 +229,8 @@ class _BannerAdState extends State<_BannerAd> {
   }
 }
 
-class _MrecAd extends StatefulWidget {
+class _MrecAd extends StatelessWidget {
   const _MrecAd({Key? key}) : super(key: key);
-
-  @override
-  State<_MrecAd> createState() => _MrecAdState();
-}
-
-class _MrecAdState extends State<_MrecAd> {
-  @override
-  void dispose() {
-    if (AppodealHelper.isAllowedAds) Appodeal.hide(Appodeal.MREC);
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
