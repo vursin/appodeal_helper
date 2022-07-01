@@ -1,18 +1,39 @@
-# appodeal_helper
+# Appodeal Helper
 
-A new Flutter plugin project.
+Easier to use `stack_appodeal_flutter`
 
-## Getting Started
+## Usage
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+``` dart
+/// Config AppodealHelper
+ AppodealHelper.config(
+    isTesting: !kReleaseMode,
+    keyAndroid: '',
+    keyIOS: '',
+    checkAllowAdsOption: CheckAllowAdsOption(
+        prefVersion: prefs.getString('prefAdsVersion') ?? '1.0.0',
+        appVersion: declare.appVersion,
+        count: prefs.getInt('prefAdsCount') ?? 0,
+        allowAfterCount: 3,
+        writePref: (version, count) {
+            prefs.setString('prefAdsVersion', version);
+            prefs.setInt('prefAdsCount', count);
+        },
+        cloudAllowed: FirebaseConfig.get('cloudAllowed'),
+    ),
+    appodealTypes: [AppodealType.banner],
+);
 
-For help getting started with Flutter development, view the
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+/// Get banner ad widget
+final banner = AppodealHelper.bannerWidget;
 
-The plugin project was generated without specifying the `--platforms` flag, no platforms are currently supported.
-To add platforms, run `flutter create -t plugin --platforms <platforms> .` in this directory.
-You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
+/// Get MREC ad widget
+final banner = AppodealHelper.mrecWidget;
+
+/// Show special Ad 
+AppodealHelper.showAd(AppodealType.reward);
+
+/// Hide special Ad 
+AppodealHelper.hideAd(AppodealType.reward);
+
+```

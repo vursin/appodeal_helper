@@ -117,6 +117,7 @@ class AppodealHelper {
 
   /// Hide specific ad
   static Future<void> hideAd(AppodealType type) async {
+    await _initial();
     return Appodeal.hide(type.toAppodeal);
   }
 
@@ -124,6 +125,7 @@ class AppodealHelper {
   ///
   /// Returns true if ad can be shown with this placement, otherwise false.
   static Future<bool> showAd(AppodealType type) async {
+    await _initial();
     return Appodeal.show(type.toAppodeal);
   }
 }
