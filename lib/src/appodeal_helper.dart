@@ -6,23 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:stack_appodeal_flutter/stack_appodeal_flutter.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-enum AppodealType {
-  banner(Appodeal.BANNER),
-  bannerRight(Appodeal.BANNER_RIGHT),
-  bannerTop(Appodeal.BANNER_TOP),
-  bannerLeft(Appodeal.BANNER_LEFT),
-  bannerBottom(Appodeal.BANNER_BOTTOM),
-  native(Appodeal.NATIVE),
-  interstitial(Appodeal.INTERSTITIAL),
-  rewarded(Appodeal.REWARDED_VIDEO),
-  mrec(Appodeal.MREC),
-  all(Appodeal.ALL);
-
-  final int toAppodeal;
-
-  const AppodealType(this.toAppodeal);
-}
-
 class AppodealHelper {
   AppodealHelper._();
 
@@ -35,7 +18,7 @@ class AppodealHelper {
 
   /// Internal variables
   static String _appodealKey = '';
-  static List<AppodealType> _appodealTypes = [];
+  static List<AppodealAdType> _appodealTypes = [];
   static bool _forceShowAd = true;
   static bool _debugLog = false;
 
@@ -49,7 +32,7 @@ class AppodealHelper {
     required String keyAndroid,
     required String keyIOS,
     required CheckAllowAdsOption checkAllowAdsOption,
-    required List<AppodealType> appodealTypes,
+    required List<AppodealAdType> appodealTypes,
     bool debugLog = false,
   }) {
     if (_isConfiged) return;
@@ -77,37 +60,38 @@ class AppodealHelper {
     if (_isInitialed) return;
     _isInitialed = true;
 
-    if (!isAllowedAds && !_forceShowAd) return;
+    if (_forceShowAd) {
+      isAllowedAds = true;
+    } else {
+      // Kiểm tra phiên bản có cho phép Ads không
+      isAllowedAds =
+          await _checkAllowedAds(checkAllowAdsOption: _checkAllowAdsOption);
+    }
 
-    await _getConsent();
+    if (!isAllowedAds) return;
 
-    // Kiểm tra phiên bản có cho phép Ads không
-    isAllowedAds =
-        await _checkAllowedAds(checkAllowAdsOption: _checkAllowAdsOption);
-
-    if (_forceShowAd) isAllowedAds = true;
-
-    await Future.wait([
-      Appodeal.setTesting(_forceShowAd), //only not release mode
-      Appodeal.setLogLevel(
-        _debugLog ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
-      ),
-      Appodeal.muteVideosIfCallsMuted(true),
-      Appodeal.setUseSafeArea(true),
-    ]);
+    // await Future.wait([
+    Appodeal.setTesting(_forceShowAd); //only not release mode
+    Appodeal.setLogLevel(
+      _debugLog ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
+    );
+    Appodeal.muteVideosIfCallsMuted(true);
+    Appodeal.setUseSafeArea(true);
+    // ]);
 
     await Appodeal.initialize(
-      _appodealKey,
-      [for (final type in _appodealTypes) type.toAppodeal],
+      appKey: _appodealKey,
+      adTypes: [for (final type in _appodealTypes) type],
     );
   }
 
   /// Destroy all Appodeal Ads. Default is to destroy all Appodeal ads.
-  static Future<void> dispose([AppodealType type = AppodealType.all]) async {
+  static Future<void> dispose(
+      [AppodealAdType type = AppodealAdType.All]) async {
     // Không triển khai ad ở ngoài 2 platform này hoặc không hỗ trợ Ads
     if (!isSupportedPlatform || !isAllowedAds) return;
 
-    await Appodeal.destroy(type.toAppodeal);
+    await Appodeal.destroy(type);
   }
 
   /// Get banner Widget
@@ -117,17 +101,17 @@ class AppodealHelper {
   static Widget get mrecWidget => const _MrecAd();
 
   /// Hide specific ad
-  static Future<void> hideAd(AppodealType type) async {
+  static Future<void> hideAd(AppodealAdType type) async {
     await initial();
-    return Appodeal.hide(type.toAppodeal);
+    return Appodeal.hide(type);
   }
 
   /// Show specific ad
   ///
   /// Returns true if ad can be shown with this placement, otherwise false.
-  static Future<bool> showAd(AppodealType type) async {
+  static Future<bool> showAd(AppodealAdType type) async {
     await initial();
-    return Appodeal.show(type.toAppodeal);
+    return Appodeal.show(type);
   }
 }
 
@@ -244,42 +228,6 @@ Future<bool> _checkAllowedAds({
   );
 
   return false;
-}
-
-Future<bool> _getConsent() async {
-  // Không triển khai ad ở ngoài 2 platform này
-  if (!AppodealHelper.isSupportedPlatform) return false;
-
-  ConsentManager.setConsentInfoUpdateListener(
-    (onConsentInfoUpdated, consent) => {_printDebug(consent)},
-    (onFailedToUpdateConsentInfo, error) => {_printDebug(error)},
-  );
-  await ConsentManager.requestConsentInfoUpdate(AppodealHelper._appodealKey);
-
-  if ((await ConsentManager.shouldShowConsentDialog()) == ShouldShow.TRUE) {
-    ConsentManager.setConsentFormListener(
-      (onConsentFormLoaded) => {_printDebug(onConsentFormLoaded)},
-      (onConsentFormError, error) => {_printDebug(error)},
-      (onConsentFormOpened) => _printDebug(onConsentFormOpened),
-      (onConsentFormClosed, consent) => {_printDebug(consent)},
-    );
-
-    await ConsentManager.loadConsentForm();
-
-    _printDebug(
-      'is consent form loaded: ${await ConsentManager.consentFormIsLoaded()}',
-    );
-    if (await ConsentManager.consentFormIsLoaded()) {
-      await ConsentManager.showAsDialogConsentForm();
-      // ConsentManager.showAsActivityConsentForm();
-    }
-  }
-
-  final consentStatus = await ConsentManager.getConsentStatus();
-  final hasConsent = consentStatus == Status.PERSONALIZED ||
-      consentStatus == Status.PARTLY_PERSONALIZED;
-
-  return hasConsent;
 }
 
 _printDebug(Object? object) =>
