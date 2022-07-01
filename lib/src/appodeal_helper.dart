@@ -68,7 +68,8 @@ class AppodealHelper {
   }
 
   /// Initial ConsentManager and Appodeal plugin.
-  static Future<void> _initial() async {
+  /// The plugin will automatically call this function when needed.
+  static Future<void> initial() async {
     assert(_isConfiged == true,
         'Must call `AppodealHelper.config` before showing Ad');
 
@@ -76,7 +77,7 @@ class AppodealHelper {
     if (_isInitialed) return;
     _isInitialed = true;
 
-    if (!isAllowedAds) return;
+    if (!isAllowedAds && !_forceShowAd) return;
 
     await _getConsent();
 
@@ -117,7 +118,7 @@ class AppodealHelper {
 
   /// Hide specific ad
   static Future<void> hideAd(AppodealType type) async {
-    await _initial();
+    await initial();
     return Appodeal.hide(type.toAppodeal);
   }
 
@@ -125,7 +126,7 @@ class AppodealHelper {
   ///
   /// Returns true if ad can be shown with this placement, otherwise false.
   static Future<bool> showAd(AppodealType type) async {
-    await _initial();
+    await initial();
     return Appodeal.show(type.toAppodeal);
   }
 }
@@ -170,7 +171,7 @@ class _BannerAd extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: AppodealHelper._initial(),
+      future: AppodealHelper.initial(),
       builder: (_, snapshot) {
         if (!snapshot.hasData) return const SizedBox.shrink();
 
@@ -191,7 +192,7 @@ class _MrecAd extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: AppodealHelper._initial(),
+      future: AppodealHelper.initial(),
       builder: (_, snapshot) {
         if (!snapshot.hasData) return const SizedBox.shrink();
 
