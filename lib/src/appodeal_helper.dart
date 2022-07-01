@@ -27,7 +27,7 @@ class AppodealHelper {
   AppodealHelper._();
 
   /// Return true if ads are allowed and false otherwise.
-  static bool isAllowedAds = false;
+  static late bool isAllowedAds;
 
   /// Return true if current platform is Android or iOS and false otherwise.
   static final isSupportedPlatform =
@@ -36,47 +36,58 @@ class AppodealHelper {
   /// Internal variables
   static String _appodealKey = '';
   static List<AppodealType> _appodealTypes = [];
-  static bool _isTesting = true;
+  static bool _forceShowAd = true;
   static bool _debugLog = false;
+
+  static late CheckAllowAdsOption _checkAllowAdsOption;
+
+  static bool _isConfiged = false;
   static bool _isInitialed = false;
 
-  /// Initial ConsentManager and Appodeal plugin.
-  static Future<void> initial({
-    required bool isTesting,
+  static void config({
+    required bool forceShowAd,
     required String keyAndroid,
     required String keyIOS,
     required CheckAllowAdsOption checkAllowAdsOption,
     required List<AppodealType> appodealTypes,
     bool debugLog = false,
-  }) async {
+  }) {
+    if (!_isConfiged) return;
+    _isConfiged = true;
+
     _appodealKey = UniversalPlatform.isAndroid ? keyAndroid : keyIOS;
     _appodealTypes = appodealTypes;
-    _isTesting = isTesting;
+    _forceShowAd = forceShowAd;
     _debugLog = debugLog;
-
-    // Không triển khai ad ở ngoài 2 platform này
-    if (!isSupportedPlatform || _isInitialed) return;
-    _isInitialed = true;
+    _checkAllowAdsOption = checkAllowAdsOption;
 
     // Nếu key không được đặt thì không hiện Ads cho platform này
-    if (_appodealKey == '') {
-      isAllowedAds = false;
+    if (_appodealKey == '' || !isSupportedPlatform) isAllowedAds = false;
 
-      return;
-    }
+    if (_forceShowAd) isAllowedAds = true;
+  }
+
+  /// Initial ConsentManager and Appodeal plugin.
+  static Future<void> _initial() async {
+    assert(_isConfiged == true,
+        'Must call `AppodealHelper.config` before showing Ad');
+
+    // Không triển khai ad ở ngoài 2 platform này
+    if (_isInitialed) return;
+    _isInitialed = true;
+
+    if (!isAllowedAds) return;
 
     await _getConsent();
 
     // Kiểm tra phiên bản có cho phép Ads không
     isAllowedAds =
-        await _checkAllowedAds(checkAllowAdsOption: checkAllowAdsOption);
+        await _checkAllowedAds(checkAllowAdsOption: _checkAllowAdsOption);
 
-    if (isTesting) isAllowedAds = true;
-
-    if (!isAllowedAds) return;
+    if (_forceShowAd) isAllowedAds = true;
 
     await Future.wait([
-      Appodeal.setTesting(_isTesting), //only not release mode
+      Appodeal.setTesting(_forceShowAd), //only not release mode
       Appodeal.setLogLevel(
         _debugLog ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
       ),
@@ -91,11 +102,11 @@ class AppodealHelper {
   }
 
   /// Destroy all Appodeal Ads. Default is to destroy all Appodeal ads.
-  static void dispose([AppodealType type = AppodealType.all]) async {
+  static Future<void> dispose([AppodealType type = AppodealType.all]) async {
     // Không triển khai ad ở ngoài 2 platform này hoặc không hỗ trợ Ads
     if (!isSupportedPlatform || !isAllowedAds) return;
 
-    Appodeal.destroy(type.toAppodeal);
+    await Appodeal.destroy(type.toAppodeal);
   }
 
   /// Get banner Widget
@@ -125,7 +136,7 @@ class CheckAllowAdsOption {
   final String appVersion;
 
   /// Count read from prefs
-  final int count;
+  final int currentCount;
 
   /// Allow ads after this count
   final int allowAfterCount;
@@ -139,15 +150,15 @@ class CheckAllowAdsOption {
   CheckAllowAdsOption({
     required this.prefVersion,
     required this.appVersion,
-    required this.count,
+    required this.currentCount,
     required this.allowAfterCount,
     required this.writePref,
-    this.cloudAllowed = false,
+    required this.cloudAllowed,
   });
 
   @override
   String toString() {
-    return 'CheckAllowAdsOption(prefVersion: $prefVersion, appVersion: $appVersion, count: $count, allowAfterCount: $allowAfterCount, cloudAllowed: $cloudAllowed)';
+    return 'CheckAllowAdsOption(prefVersion: $prefVersion, appVersion: $appVersion, count: $currentCount, allowAfterCount: $allowAfterCount, cloudAllowed: $cloudAllowed)';
   }
 }
 
@@ -156,12 +167,19 @@ class _BannerAd extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppodealHelper.isAllowedAds
-        ? const AppodealBanner(
-            adSize: AppodealBannerSize.BANNER,
-            placement: "default",
-          )
-        : const SizedBox.shrink();
+    return FutureBuilder(
+      future: AppodealHelper._initial(),
+      builder: (_, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+
+        return AppodealHelper.isAllowedAds
+            ? const AppodealBanner(
+                adSize: AppodealBannerSize.BANNER,
+                placement: "default",
+              )
+            : const SizedBox.shrink();
+      },
+    );
   }
 }
 
@@ -170,12 +188,19 @@ class _MrecAd extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppodealHelper.isAllowedAds
-        ? const AppodealBanner(
-            adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
-            placement: "default",
-          )
-        : const SizedBox.shrink();
+    return FutureBuilder(
+      future: AppodealHelper._initial(),
+      builder: (_, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+
+        return AppodealHelper.isAllowedAds
+            ? const AppodealBanner(
+                adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
+                placement: "default",
+              )
+            : const SizedBox.shrink();
+      },
+    );
   }
 }
 
@@ -195,7 +220,7 @@ Future<bool> _checkAllowedAds({
     return false;
   }
 
-  if (checkAllowAdsOption.count >= checkAllowAdsOption.allowAfterCount) {
+  if (checkAllowAdsOption.currentCount >= checkAllowAdsOption.allowAfterCount) {
     // Nếu cloud không cho hiện Ads thì không cho hiện Ads nhưng những bước
     // còn lại vẫn phải thực hiện.
     if (!checkAllowAdsOption.cloudAllowed) {
@@ -208,7 +233,7 @@ Future<bool> _checkAllowedAds({
 
   checkAllowAdsOption.writePref(
     checkAllowAdsOption.appVersion,
-    checkAllowAdsOption.count + 1,
+    checkAllowAdsOption.currentCount + 1,
   );
 
   _printDebug(
