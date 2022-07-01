@@ -52,12 +52,12 @@ class AppodealHelper {
 
   /// Initial ConsentManager and Appodeal plugin.
   /// The plugin will automatically call this function when needed.
-  static Future<void> initial() async {
+  static Future<bool> initial() async {
     assert(_isConfiged == true,
         'Must call `AppodealHelper.config` before showing Ad');
 
     // Không triển khai ad ở ngoài 2 platform này
-    if (_isInitialed) return;
+    if (_isInitialed) return true;
     _isInitialed = true;
 
     if (_forceShowAd) {
@@ -68,21 +68,23 @@ class AppodealHelper {
           await _checkAllowedAds(checkAllowAdsOption: _checkAllowAdsOption);
     }
 
-    if (!isAllowedAds) return;
+    if (!isAllowedAds) return false;
 
     // await Future.wait([
-    Appodeal.setTesting(_forceShowAd); //only not release mode
-    Appodeal.setLogLevel(
+    await Appodeal.setTesting(_forceShowAd); //only not release mode
+    await Appodeal.setLogLevel(
       _debugLog ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
     );
-    Appodeal.muteVideosIfCallsMuted(true);
-    Appodeal.setUseSafeArea(true);
+    await Appodeal.muteVideosIfCallsMuted(true);
+    await Appodeal.setUseSafeArea(true);
     // ]);
 
     await Appodeal.initialize(
       appKey: _appodealKey,
       adTypes: [for (final type in _appodealTypes) type],
     );
+
+    return true;
   }
 
   /// Destroy all Appodeal Ads. Default is to destroy all Appodeal ads.
@@ -102,7 +104,7 @@ class AppodealHelper {
 
   /// Hide specific ad
   static Future<void> hideAd(AppodealAdType type) async {
-    await initial();
+    if (!await initial()) return;
     return Appodeal.hide(type);
   }
 
@@ -110,7 +112,7 @@ class AppodealHelper {
   ///
   /// Returns true if ad can be shown with this placement, otherwise false.
   static Future<bool> showAd(AppodealAdType type) async {
-    await initial();
+    if (!await initial()) return false;
     return Appodeal.show(type);
   }
 }
@@ -157,7 +159,9 @@ class _BannerAd extends StatelessWidget {
     return FutureBuilder(
       future: AppodealHelper.initial(),
       builder: (_, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
+        if (!snapshot.hasData || snapshot.data == false) {
+          return const SizedBox.shrink();
+        }
 
         return AppodealHelper.isAllowedAds
             ? const AppodealBanner(
@@ -178,7 +182,9 @@ class _MrecAd extends StatelessWidget {
     return FutureBuilder(
       future: AppodealHelper.initial(),
       builder: (_, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
+        if (!snapshot.hasData || snapshot.data == false) {
+          return const SizedBox.shrink();
+        }
 
         return AppodealHelper.isAllowedAds
             ? const AppodealBanner(
