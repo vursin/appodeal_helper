@@ -52,7 +52,7 @@ class AppodealHelper {
     required List<AppodealType> appodealTypes,
     bool debugLog = false,
   }) {
-    if (!_isConfiged) return;
+    if (_isConfiged) return;
     _isConfiged = true;
 
     _appodealKey = UniversalPlatform.isAndroid ? keyAndroid : keyIOS;
