@@ -3,8 +3,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+// ignore: depend_on_referenced_packages, implementation_imports
+import 'package:hive/src/hive_impl.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stack_appodeal_flutter/stack_appodeal_flutter.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -31,7 +33,7 @@ class AppodealHelper {
   static bool _isConfiged = false;
   static bool _isInitialed = false;
 
-  static const String _prefix = 'AppodealHelper_';
+  static const String _prefix = 'AppodealHelper';
 
   static void config({
     required bool forceShowAd,
@@ -76,24 +78,8 @@ class AppodealHelper {
 
       _printDebug('Force to show Ad');
     } else {
-      final pref = await SharedPreferences.getInstance();
-      final packageInfo = await PackageInfo.fromPlatform();
-
-      final checkAllowAdsOption = CheckAllowAdsOption(
-        prefVersion: pref.getString('${_prefix}prefVersion') ?? '1.0.0',
-        appVersion: packageInfo.version,
-        currentCount: pref.getInt('${_prefix}currentCount') ?? 0,
-        allowAfterCount: _allowAfterCount,
-        writePref: (version, count) {
-          pref.setString('${_prefix}prefVersion', version);
-          pref.setInt('${_prefix}prefVersion', count);
-        },
-        lastGuard: _lastGuard,
-      );
-
       // Kiểm tra phiên bản có cho phép Ads không
-      isAllowedAds =
-          await _checkAllowedAds(checkAllowAdsOption: checkAllowAdsOption);
+      isAllowedAds = await _checkAllowedAds();
     }
 
     _printDebug('Is allowed Ads: $isAllowedAds');
@@ -227,12 +213,34 @@ class _MrecAd extends StatelessWidget {
   }
 }
 
+@visibleForTesting
+Future<bool> checkAllowedAds() => _checkAllowedAds();
+
+Future<Box> getHiveBox() async {
+  final HiveInterface hive = HiveImpl();
+  await hive.initFlutter(AppodealHelper._prefix);
+  return hive.openBox(AppodealHelper._prefix);
+}
+
 /// Kiểm tra phiên bản cũ trên máy, nếu khác với phiên bản app đang chạy
 /// thì sẽ không hiện Ads (tránh tình trạng bot của Google click nhầm).
 /// Sẽ đếm số lần mở app, nếu đủ 3 lần sẽ cho phép mở Ads lại.
-Future<bool> _checkAllowedAds({
-  required CheckAllowAdsOption checkAllowAdsOption,
-}) async {
+Future<bool> _checkAllowedAds() async {
+  final box = await getHiveBox();
+  final packageInfo = await PackageInfo.fromPlatform();
+
+  final checkAllowAdsOption = CheckAllowAdsOption(
+    prefVersion: (box.get('prefVersion') as String?) ?? '1.0.0',
+    appVersion: packageInfo.version,
+    currentCount: (box.get('currentCount') as int?) ?? 0,
+    allowAfterCount: AppodealHelper._allowAfterCount,
+    writePref: (version, count) {
+      box.put('prefVersion', version);
+      box.put('prefVersion', count);
+    },
+    lastGuard: AppodealHelper._lastGuard,
+  );
+
   if (checkAllowAdsOption.prefVersion != checkAllowAdsOption.appVersion) {
     checkAllowAdsOption.writePref(checkAllowAdsOption.appVersion, 1);
 
