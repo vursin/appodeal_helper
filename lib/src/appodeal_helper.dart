@@ -3,6 +3,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stack_appodeal_flutter/stack_appodeal_flutter.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -22,16 +24,24 @@ class AppodealHelper {
   static bool _forceShowAd = true;
   static bool _debugLog = false;
 
-  static late CheckAllowAdsOption _checkAllowAdsOption;
+  static bool _lastGuard = false;
+
+  static int _allowAfterCount = 3;
 
   static bool _isConfiged = false;
   static bool _isInitialed = false;
+
+  static const String _prefix = 'AppodealHelper_';
 
   static void config({
     required bool forceShowAd,
     required String keyAndroid,
     required String keyIOS,
-    required CheckAllowAdsOption checkAllowAdsOption,
+
+    /// Last value to check for allowing show ad or not. It can be a config on
+    /// cloud (if this value is false then all other progress will be false).
+    bool lastGuard = true,
+    int allowAfterCount = 3,
     required List<AppodealAdType> appodealTypes,
     bool debugLog = false,
   }) {
@@ -42,7 +52,8 @@ class AppodealHelper {
     _appodealTypes = appodealTypes;
     _forceShowAd = forceShowAd;
     _debugLog = debugLog;
-    _checkAllowAdsOption = checkAllowAdsOption;
+    _lastGuard = lastGuard;
+    _allowAfterCount = allowAfterCount;
 
     // Nếu key không được đặt thì không hiện Ads cho platform này
     if (_appodealKey == '' || !isSupportedPlatform) isAllowedAds = false;
@@ -62,12 +73,30 @@ class AppodealHelper {
 
     if (_forceShowAd) {
       isAllowedAds = true;
+
+      _printDebug('Force to show Ad');
     } else {
+      final pref = await SharedPreferences.getInstance();
+      final packageInfo = await PackageInfo.fromPlatform();
+
+      final checkAllowAdsOption = CheckAllowAdsOption(
+        prefVersion: pref.getString('${_prefix}prefVersion') ?? '1.0.0',
+        appVersion: packageInfo.version,
+        currentCount: pref.getInt('${_prefix}currentCount') ?? 0,
+        allowAfterCount: _allowAfterCount,
+        writePref: (version, count) {
+          pref.setString('${_prefix}prefVersion', version);
+          pref.setInt('${_prefix}prefVersion', count);
+        },
+        lastGuard: _lastGuard,
+      );
+
       // Kiểm tra phiên bản có cho phép Ads không
       isAllowedAds =
-          await _checkAllowedAds(checkAllowAdsOption: _checkAllowAdsOption);
+          await _checkAllowedAds(checkAllowAdsOption: checkAllowAdsOption);
     }
 
+    _printDebug('Is allowed Ads: $isAllowedAds');
     if (!isAllowedAds) return false;
 
     // await Future.wait([
@@ -84,6 +113,7 @@ class AppodealHelper {
       adTypes: [for (final type in _appodealTypes) type],
     );
 
+    _printDebug('Appodeal has been initialized');
     return true;
   }
 
@@ -134,7 +164,7 @@ class CheckAllowAdsOption {
   final void Function(String, int) writePref;
 
   /// Config from cloud as a last checking before serving Ads. Default is false
-  final bool cloudAllowed;
+  final bool lastGuard;
 
   CheckAllowAdsOption({
     required this.prefVersion,
@@ -142,12 +172,12 @@ class CheckAllowAdsOption {
     required this.currentCount,
     required this.allowAfterCount,
     required this.writePref,
-    required this.cloudAllowed,
+    required this.lastGuard,
   });
 
   @override
   String toString() {
-    return 'CheckAllowAdsOption(prefVersion: $prefVersion, appVersion: $appVersion, count: $currentCount, allowAfterCount: $allowAfterCount, cloudAllowed: $cloudAllowed)';
+    return 'CheckAllowAdsOption(prefVersion: $prefVersion, appVersion: $appVersion, count: $currentCount, allowAfterCount: $allowAfterCount, cloudAllowed: $lastGuard)';
   }
 }
 
@@ -207,7 +237,7 @@ Future<bool> _checkAllowedAds({
     checkAllowAdsOption.writePref(checkAllowAdsOption.appVersion, 1);
 
     _printDebug(
-      'Pref config không hiện Ads cho phiên bản này: $checkAllowAdsOption',
+      'Pref config do not allow showing Ad on this version: $checkAllowAdsOption',
     );
 
     return false;
@@ -216,8 +246,8 @@ Future<bool> _checkAllowedAds({
   if (checkAllowAdsOption.currentCount >= checkAllowAdsOption.allowAfterCount) {
     // Nếu cloud không cho hiện Ads thì không cho hiện Ads nhưng những bước
     // còn lại vẫn phải thực hiện.
-    if (!checkAllowAdsOption.cloudAllowed) {
-      _printDebug('Firebase remote config không hiện Ads cho phiên bản này');
+    if (!checkAllowAdsOption.lastGuard) {
+      _printDebug('lastGuard do not allow showing Ad');
       return false;
     }
 
@@ -230,7 +260,7 @@ Future<bool> _checkAllowedAds({
   );
 
   _printDebug(
-    'Pref config không hiện Ads cho phiên bản này: $checkAllowAdsOption',
+    'Pref config do not allow showing Ad on this version: $checkAllowAdsOption',
   );
 
   return false;
