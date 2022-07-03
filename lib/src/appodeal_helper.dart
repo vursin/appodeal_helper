@@ -24,6 +24,7 @@ class AppodealHelper {
   static String _appodealKey = '';
   static List<AppodealAdType> _appodealTypes = [];
   static bool _forceShowAd = true;
+  static bool _isTestAd = true;
   static bool _debugLog = false;
 
   static bool _lastGuard = false;
@@ -37,6 +38,7 @@ class AppodealHelper {
 
   static void config({
     required bool forceShowAd,
+    required bool isTestAd,
     required String keyAndroid,
     required String keyIOS,
 
@@ -53,6 +55,7 @@ class AppodealHelper {
     _appodealKey = UniversalPlatform.isAndroid ? keyAndroid : keyIOS;
     _appodealTypes = appodealTypes;
     _forceShowAd = forceShowAd;
+    _isTestAd = isTestAd;
     _debugLog = debugLog;
     _lastGuard = lastGuard;
     _allowAfterCount = allowAfterCount;
@@ -86,7 +89,7 @@ class AppodealHelper {
     if (!isAllowedAds) return false;
 
     // await Future.wait([
-    await Appodeal.setTesting(_forceShowAd); //only not release mode
+    await Appodeal.setTesting(_isTestAd); //only not release mode
     await Appodeal.setLogLevel(
       _debugLog ? Appodeal.LogLevelVerbose : Appodeal.LogLevelNone,
     );
