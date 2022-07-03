@@ -239,7 +239,7 @@ Future<bool> _checkAllowedAds() async {
     allowAfterCount: AppodealHelper._allowAfterCount,
     writePref: (version, count) {
       box.put('prefVersion', version);
-      box.put('prefVersion', count);
+      box.put('currentCount', count);
     },
     lastGuard: AppodealHelper._lastGuard,
   );
