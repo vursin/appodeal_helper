@@ -17,7 +17,7 @@ class AppodealHelper {
   AppodealHelper._();
 
   /// Return true if ads are allowed and false otherwise.
-  static late bool isAllowedAds;
+  static bool isAllowedAds = false;
 
   /// Return true if current platform is Android or iOS and false otherwise.
   static final isSupportedPlatform =
