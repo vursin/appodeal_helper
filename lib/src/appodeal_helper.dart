@@ -10,6 +10,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:stack_appodeal_flutter/stack_appodeal_flutter.dart';
 import 'package:universal_platform/universal_platform.dart';
 
+final HiveInterface _hive = HiveImpl();
+Box? _hiveBox;
+
 class AppodealHelper {
   AppodealHelper._();
 
@@ -220,9 +223,12 @@ class _MrecAd extends StatelessWidget {
 Future<bool> checkAllowedAds() => _checkAllowedAds();
 
 Future<Box> getHiveBox() async {
-  final HiveInterface hive = HiveImpl();
-  await hive.initFlutter(AppodealHelper._prefix);
-  return hive.openBox(AppodealHelper._prefix);
+  if (_hiveBox != null) return _hiveBox!;
+
+  await _hive.initFlutter(AppodealHelper._prefix);
+  _hiveBox = await _hive.openBox(AppodealHelper._prefix);
+
+  return _hiveBox!;
 }
 
 /// Kiểm tra phiên bản cũ trên máy, nếu khác với phiên bản app đang chạy
