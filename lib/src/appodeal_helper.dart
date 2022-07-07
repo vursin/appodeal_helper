@@ -14,32 +14,34 @@ final HiveInterface _hive = HiveImpl();
 Box? _hiveBox;
 
 class AppodealHelper {
+  static final instance = AppodealHelper._();
+
   AppodealHelper._();
 
   /// Return true if ads are allowed and false otherwise.
-  static bool isAllowedAds = false;
+  bool isAllowedAds = false;
 
   /// Return true if current platform is Android or iOS and false otherwise.
-  static final isSupportedPlatform =
+  final isSupportedPlatform =
       UniversalPlatform.isAndroid || UniversalPlatform.isIOS;
 
   /// Internal variables
-  static String _appodealKey = '';
-  static List<AppodealAdType> _appodealTypes = [];
-  static bool _forceShowAd = true;
-  static bool _isTestAd = true;
-  static bool _debugLog = false;
+  String _appodealKey = '';
+  List<AppodealAdType> _appodealTypes = [];
+  bool _forceShowAd = true;
+  bool _isTestAd = true;
+  bool _debugLog = false;
 
-  static bool _lastGuard = false;
+  bool _lastGuard = false;
 
-  static int _allowAfterCount = 3;
+  int _allowAfterCount = 3;
 
-  static bool _isConfiged = false;
-  static bool _isInitialed = false;
+  bool _isConfiged = false;
+  bool _isInitialed = false;
 
   static const String _prefix = 'AppodealHelper';
 
-  static void config({
+  void config({
     required bool forceShowAd,
     required bool isTestAd,
     required String keyAndroid,
@@ -71,7 +73,7 @@ class AppodealHelper {
 
   /// Initial ConsentManager and Appodeal plugin.
   /// The plugin will automatically call this function when needed.
-  static Future<bool> initial() async {
+  Future<bool> initial() async {
     assert(_isConfiged == true,
         'Must call `AppodealHelper.config` before showing Ad');
 
@@ -110,8 +112,7 @@ class AppodealHelper {
   }
 
   /// Destroy all Appodeal Ads. Default is to destroy all Appodeal ads.
-  static Future<void> dispose(
-      [AppodealAdType type = AppodealAdType.All]) async {
+  Future<void> dispose([AppodealAdType type = AppodealAdType.All]) async {
     // Không triển khai ad ở ngoài 2 platform này hoặc không hỗ trợ Ads
     if (!isSupportedPlatform || !isAllowedAds) return;
 
@@ -119,13 +120,13 @@ class AppodealHelper {
   }
 
   /// Get banner Widget
-  static Widget get bannerWidget => const _BannerAd();
+  Widget get bannerWidget => const _BannerAd();
 
   /// Get MREC Widget
-  static Widget get mrecWidget => const _MrecAd();
+  Widget get mrecWidget => const _MrecAd();
 
   /// Hide specific ad
-  static Future<void> hideAd(AppodealAdType type) async {
+  Future<void> hideAd(AppodealAdType type) async {
     if (!await initial()) return;
     return Appodeal.hide(type);
   }
@@ -133,7 +134,7 @@ class AppodealHelper {
   /// Show specific ad
   ///
   /// Returns true if ad can be shown with this placement, otherwise false.
-  static Future<bool> showAd(AppodealAdType type) async {
+  Future<bool> showAd(AppodealAdType type) async {
     if (!await initial()) return false;
     return Appodeal.show(type);
   }
@@ -179,13 +180,13 @@ class _BannerAd extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: AppodealHelper.initial(),
+      future: AppodealHelper.instance.initial(),
       builder: (_, snapshot) {
         if (!snapshot.hasData || snapshot.data == false) {
           return const SizedBox.shrink();
         }
 
-        return AppodealHelper.isAllowedAds
+        return AppodealHelper.instance.isAllowedAds
             ? const AppodealBanner(
                 adSize: AppodealBannerSize.BANNER,
                 placement: "default",
@@ -202,13 +203,13 @@ class _MrecAd extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: AppodealHelper.initial(),
+      future: AppodealHelper.instance.initial(),
       builder: (_, snapshot) {
         if (!snapshot.hasData || snapshot.data == false) {
           return const SizedBox.shrink();
         }
 
-        return AppodealHelper.isAllowedAds
+        return AppodealHelper.instance.isAllowedAds
             ? const AppodealBanner(
                 adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
                 placement: "default",
@@ -242,12 +243,12 @@ Future<bool> _checkAllowedAds() async {
     prefVersion: (box.get('prefVersion') as String?) ?? '1.0.0',
     appVersion: packageInfo.version,
     currentCount: (box.get('currentCount') as int?) ?? 1,
-    allowAfterCount: AppodealHelper._allowAfterCount,
+    allowAfterCount: AppodealHelper.instance._allowAfterCount,
     writePref: (version, count) {
       box.put('prefVersion', version);
       box.put('currentCount', count);
     },
-    lastGuard: AppodealHelper._lastGuard,
+    lastGuard: AppodealHelper.instance._lastGuard,
   );
 
   if (checkAllowAdsOption.prefVersion != checkAllowAdsOption.appVersion) {
@@ -285,6 +286,7 @@ Future<bool> _checkAllowedAds() async {
   return false;
 }
 
-_printDebug(Object? object) =>
+_printDebug(Object? object) => AppodealHelper.instance._debugLog
     // ignore: avoid_print
-    AppodealHelper._debugLog ? print('[Appodeal Helper]: $object') : null;
+    ? print('[Appodeal Helper]: $object')
+    : null;
