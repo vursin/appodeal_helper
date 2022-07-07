@@ -233,7 +233,7 @@ Future<Box> getHiveBox() async {
 
 /// Kiểm tra phiên bản cũ trên máy, nếu khác với phiên bản app đang chạy
 /// thì sẽ không hiện Ads (tránh tình trạng bot của Google click nhầm).
-/// Sẽ đếm số lần mở app, nếu đủ 3 lần sẽ cho phép mở Ads lại.
+/// Sẽ đếm số lần mở app, nếu đủ `allowAfterCount` lần sẽ cho phép mở Ads lại.
 Future<bool> _checkAllowedAds() async {
   final box = await getHiveBox();
   final packageInfo = await PackageInfo.fromPlatform();
@@ -260,7 +260,9 @@ Future<bool> _checkAllowedAds() async {
     return false;
   }
 
-  if (checkAllowAdsOption.currentCount >= checkAllowAdsOption.allowAfterCount) {
+  final count = checkAllowAdsOption.currentCount + 1;
+
+  if (count >= checkAllowAdsOption.allowAfterCount) {
     // Nếu cloud không cho hiện Ads thì không cho hiện Ads nhưng những bước
     // còn lại vẫn phải thực hiện.
     if (!checkAllowAdsOption.lastGuard) {
@@ -273,7 +275,7 @@ Future<bool> _checkAllowedAds() async {
 
   checkAllowAdsOption.writePref(
     checkAllowAdsOption.appVersion,
-    checkAllowAdsOption.currentCount + 1,
+    count,
   );
 
   _printDebug(
