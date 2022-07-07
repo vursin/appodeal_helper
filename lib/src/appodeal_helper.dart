@@ -241,7 +241,7 @@ Future<bool> _checkAllowedAds() async {
   final checkAllowAdsOption = CheckAllowAdsOption(
     prefVersion: (box.get('prefVersion') as String?) ?? '1.0.0',
     appVersion: packageInfo.version,
-    currentCount: (box.get('currentCount') as int?) ?? 0,
+    currentCount: (box.get('currentCount') as int?) ?? 1,
     allowAfterCount: AppodealHelper._allowAfterCount,
     writePref: (version, count) {
       box.put('prefVersion', version);
