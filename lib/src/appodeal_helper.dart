@@ -79,7 +79,10 @@ class AppodealHelper {
   /// The plugin will automatically call this function when needed.
   Future<bool> initial() async {
     // Không triển khai ad ở ngoài 2 platform này
-    if (_isInitialed) return true;
+    if (_isInitialed) {
+      await Future.delayed(const Duration(seconds: 2));
+      return true;
+    }
     _isInitialed = true;
 
     // Wait until config is called
@@ -186,43 +189,29 @@ class _BannerAd extends StatefulWidget {
 }
 
 class __BannerAdState extends State<_BannerAd> {
-  bool _isDisposed = true;
-  @override
-  void initState() {
-    setState(() {
-      _isDisposed = false;
-    });
-    super.initState();
-  }
-
   @override
   void dispose() {
-    setState(() {
-      _isDisposed = true;
-    });
     Appodeal.destroy(AppodealAdType.Banner);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _isDisposed
-        ? const SizedBox.shrink()
-        : FutureBuilder(
-            future: AppodealHelper.instance.initial(),
-            builder: (_, snapshot) {
-              if (!snapshot.hasData || snapshot.data == false) {
-                return const SizedBox.shrink();
-              }
+    return FutureBuilder(
+      future: AppodealHelper.instance.initial(),
+      builder: (_, snapshot) {
+        if (!snapshot.hasData || snapshot.data == false) {
+          return const SizedBox.shrink();
+        }
 
-              return AppodealHelper.instance.isAllowedAds
-                  ? const AppodealBanner(
-                      adSize: AppodealBannerSize.BANNER,
-                      placement: "default",
-                    )
-                  : const SizedBox.shrink();
-            },
-          );
+        return AppodealHelper.instance.isAllowedAds
+            ? const AppodealBanner(
+                adSize: AppodealBannerSize.BANNER,
+                placement: "default",
+              )
+            : const SizedBox.shrink();
+      },
+    );
   }
 }
 
@@ -234,43 +223,29 @@ class _MrecAd extends StatefulWidget {
 }
 
 class __MrecAdState extends State<_MrecAd> {
-  bool _isDisposed = true;
-  @override
-  void initState() {
-    setState(() {
-      _isDisposed = false;
-    });
-    super.initState();
-  }
-
   @override
   void dispose() {
-    setState(() {
-      _isDisposed = true;
-    });
     Appodeal.destroy(AppodealAdType.MREC);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _isDisposed
-        ? const SizedBox.shrink()
-        : FutureBuilder(
-            future: AppodealHelper.instance.initial(),
-            builder: (_, snapshot) {
-              if (!snapshot.hasData || snapshot.data == false) {
-                return const SizedBox.shrink();
-              }
+    return FutureBuilder(
+      future: AppodealHelper.instance.initial(),
+      builder: (_, snapshot) {
+        if (!snapshot.hasData || snapshot.data == false) {
+          return const SizedBox.shrink();
+        }
 
-              return AppodealHelper.instance.isAllowedAds
-                  ? const AppodealBanner(
-                      adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
-                      placement: "default",
-                    )
-                  : const SizedBox.shrink();
-            },
-          );
+        return AppodealHelper.instance.isAllowedAds
+            ? const AppodealBanner(
+                adSize: AppodealBannerSize.MEDIUM_RECTANGLE,
+                placement: "default",
+              )
+            : const SizedBox.shrink();
+      },
+    );
   }
 }
 
