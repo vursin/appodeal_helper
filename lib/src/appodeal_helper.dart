@@ -39,6 +39,8 @@ class AppodealHelper {
   bool _isConfiged = false;
   bool _isInitialed = false;
 
+  final Completer _configCompleter = Completer<bool>();
+
   static const String _prefix = 'AppodealHelper';
 
   void config({
@@ -69,17 +71,19 @@ class AppodealHelper {
     if (_appodealKey == '' || !isSupportedPlatform) isAllowedAds = false;
 
     if (_forceShowAd) isAllowedAds = true;
+
+    _configCompleter.complete(true);
   }
 
   /// Initial ConsentManager and Appodeal plugin.
   /// The plugin will automatically call this function when needed.
   Future<bool> initial() async {
-    assert(_isConfiged == true,
-        'Must call `AppodealHelper.config` before showing Ad');
-
     // Không triển khai ad ở ngoài 2 platform này
     if (_isInitialed) return true;
     _isInitialed = true;
+
+    // Wait until config is called
+    await _configCompleter.future;
 
     if (_forceShowAd) {
       isAllowedAds = true;
@@ -174,8 +178,19 @@ class CheckAllowAdsOption {
   }
 }
 
-class _BannerAd extends StatelessWidget {
+class _BannerAd extends StatefulWidget {
   const _BannerAd({Key? key}) : super(key: key);
+
+  @override
+  State<_BannerAd> createState() => __BannerAdState();
+}
+
+class __BannerAdState extends State<_BannerAd> {
+  @override
+  void dispose() {
+    Appodeal.destroy(AppodealAdType.Banner);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -197,8 +212,19 @@ class _BannerAd extends StatelessWidget {
   }
 }
 
-class _MrecAd extends StatelessWidget {
+class _MrecAd extends StatefulWidget {
   const _MrecAd({Key? key}) : super(key: key);
+
+  @override
+  State<_MrecAd> createState() => __MrecAdState();
+}
+
+class __MrecAdState extends State<_MrecAd> {
+  @override
+  void dispose() {
+    Appodeal.destroy(AppodealAdType.MREC);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
