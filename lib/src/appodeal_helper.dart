@@ -146,6 +146,21 @@ class AppodealHelper {
     return Appodeal.show(type);
   }
 
+  /// Show rewarded ad = [showAd(AppodealAdType.RewardedVideo)]
+  Future<bool> showRewaredVideo() async {
+    return showAd(AppodealAdType.RewardedVideo);
+  }
+
+  /// Show interstitial ad = [showAd(AppodealAdType.Interstitial)]
+  Future<bool> showInterstitial() async {
+    return showAd(AppodealAdType.Interstitial);
+  }
+
+  /// Show banner ad = [showAd(AppodealAdType.Banner)]
+  Future<bool> showBanner() async {
+    return showAd(AppodealAdType.Banner);
+  }
+
   /// Set callbacks for Rewarded Video Ad
   void setRewardedVideoCallbacks(
     Function(double amount, String reward) onFinished,
