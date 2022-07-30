@@ -190,11 +190,16 @@ class AppodealHelper {
   }
 
   /// Is initialized ad
-  Future<bool> isInitialized(AppodealAdType adType) =>
-      Appodeal.isInitialized(adType);
+  Future<bool> isInitialized(AppodealAdType adType) async {
+    if (!await initial()) return false;
+    return Appodeal.isInitialized(adType);
+  }
 
   /// Can show ad
-  Future<bool> canShow(AppodealAdType adType) => Appodeal.canShow(adType);
+  Future<bool> canShow(AppodealAdType adType) async {
+    if (!await initial()) return false;
+    return Appodeal.canShow(adType);
+  }
 
   /// Show interstitial ad = [showAd(AppodealAdType.Interstitial)]
   Future<bool> showInterstitial() async {
