@@ -189,6 +189,13 @@ class AppodealHelper {
     return isShowed;
   }
 
+  /// Is initialized ad
+  Future<bool> isInitialized(AppodealAdType adType) =>
+      Appodeal.isInitialized(adType);
+
+  /// Can show ad
+  Future<bool> canShow(AppodealAdType adType) => Appodeal.canShow(adType);
+
   /// Show interstitial ad = [showAd(AppodealAdType.Interstitial)]
   Future<bool> showInterstitial() async {
     // TODO: Add more detail
