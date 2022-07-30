@@ -145,6 +145,42 @@ class AppodealHelper {
     if (!await initial()) return false;
     return Appodeal.show(type);
   }
+
+  /// Set callbacks for Rewarded Video Ad
+  void setRewardedVideoCallbacks(
+    Function(double amount, String reward) onFinished,
+    Function(bool isFinished) onClosed,
+    Function() onClicked,
+    Function() onFailed,
+  ) {
+    Appodeal.setRewardedVideoCallbacks(
+      onRewardedVideoLoaded: (isPrecache) => {},
+      onRewardedVideoFailedToLoad: onFailed,
+      onRewardedVideoShown: () => {},
+      onRewardedVideoShowFailed: onFailed,
+      onRewardedVideoFinished: onFinished,
+      onRewardedVideoClosed: onClosed,
+      onRewardedVideoExpired: () => {},
+      onRewardedVideoClicked: onClicked,
+    );
+  }
+
+  /// Set callbacks for Interstitial Ad
+  void setInterstitialCallbacks(
+    Function() onClosed,
+    Function() onClicked,
+    Function() onFailed,
+  ) {
+    Appodeal.setInterstitialCallbacks(
+      onInterstitialLoaded: (isPrecache) => {},
+      onInterstitialFailedToLoad: onFailed,
+      onInterstitialShown: () => {},
+      onInterstitialShowFailed: onFailed,
+      onInterstitialClicked: onClicked,
+      onInterstitialClosed: onClosed,
+      onInterstitialExpired: () => {},
+    );
+  }
 }
 
 class CheckAllowAdsOption {
