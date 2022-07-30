@@ -39,6 +39,9 @@ class AppodealHelper {
   bool _isConfiged = false;
   bool _isInitialed = false;
 
+  int _maxAdReloadAttempts = 3;
+  int _rewaredAttempts = 0;
+
   final Completer _configCompleter = Completer<bool>();
 
   static const String _prefix = 'AppodealHelper';
@@ -54,6 +57,7 @@ class AppodealHelper {
     bool lastGuard = true,
     int allowAfterCount = 3,
     required List<AppodealAdType> appodealTypes,
+    int maxAdReloadAttemps = 3,
     bool debugLog = false,
   }) {
     if (_isConfiged) return;
@@ -66,6 +70,7 @@ class AppodealHelper {
     _debugLog = debugLog;
     _lastGuard = lastGuard;
     _allowAfterCount = allowAfterCount;
+    _maxAdReloadAttempts = maxAdReloadAttemps;
 
     // Nếu key không được đặt thì không hiện Ads cho platform này
     if (_appodealKey == '' || !isSupportedPlatform) isAllowedAds = false;
@@ -148,11 +153,45 @@ class AppodealHelper {
 
   /// Show rewarded ad = [showAd(AppodealAdType.RewardedVideo)]
   Future<bool> showRewaredVideo() async {
-    return showAd(AppodealAdType.RewardedVideo);
+    final isInitialized =
+        await Appodeal.isInitialized(AppodealAdType.RewardedVideo);
+    if (!isInitialized) {
+      _printDebug('Rewarded video is not initialized, try again..');
+      await Future.delayed(const Duration(milliseconds: 500));
+      return showRewaredVideo();
+    }
+    _printDebug('Rewarded video is initialized!');
+
+    final isCanShow = await Appodeal.canShow(AppodealAdType.RewardedVideo);
+    if (!isCanShow) {
+      _printDebug('Rewarded video can not show, try again..');
+      await Future.delayed(const Duration(milliseconds: 500));
+      return showRewaredVideo();
+    }
+    _printDebug('Rewarded video can show!');
+
+    final isShowed = await showAd(AppodealAdType.RewardedVideo);
+    if (!isShowed) {
+      _rewaredAttempts++;
+      if (_rewaredAttempts < _maxAdReloadAttempts) {
+        _printDebug('Rewared video is not shown, try again...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        return showRewaredVideo();
+      } else {
+        _printDebug('Rewared video is not shown, max attempts exceeded');
+      }
+    } else {
+      _printDebug('Rewared video is shown!');
+    }
+
+    _rewaredAttempts = 0;
+
+    return isShowed;
   }
 
   /// Show interstitial ad = [showAd(AppodealAdType.Interstitial)]
   Future<bool> showInterstitial() async {
+    // TODO: Add more detail
     return showAd(AppodealAdType.Interstitial);
   }
 
