@@ -213,12 +213,12 @@ class AppodealHelper {
   }
 
   /// Set callbacks for Rewarded Video Ad
-  void setRewardedVideoCallbacks(
-    Function(double amount, String reward) onFinished,
-    Function(bool isFinished) onClosed,
-    Function() onClicked,
-    Function() onFailed,
-  ) {
+  void setRewardedVideoCallbacks({
+    void Function(double amount, String reward)? onFinished,
+    void Function(bool isFinished)? onClosed,
+    void Function()? onClicked,
+    void Function()? onFailed,
+  }) {
     Appodeal.setRewardedVideoCallbacks(
       onRewardedVideoLoaded: (isPrecache) => {},
       onRewardedVideoFailedToLoad: onFailed,
@@ -232,11 +232,11 @@ class AppodealHelper {
   }
 
   /// Set callbacks for Interstitial Ad
-  void setInterstitialCallbacks(
-    Function() onClosed,
-    Function() onClicked,
-    Function() onFailed,
-  ) {
+  void setInterstitialCallbacks({
+    void Function()? onClosed,
+    void Function()? onClicked,
+    void Function()? onFailed,
+  }) {
     Appodeal.setInterstitialCallbacks(
       onInterstitialLoaded: (isPrecache) => {},
       onInterstitialFailedToLoad: onFailed,
