@@ -102,7 +102,7 @@ class AppodealHelper {
 
     if (_forceShowAd) isAllowedAds = true;
 
-    if (isShowConsent) {
+    if (isAllowedAds && isShowConsent) {
       showConsent()
           .then((value) => _printDebug('Call showConsent result: $value'));
     }
