@@ -66,6 +66,9 @@ class AppodealHelper {
   /// [maxAdReloadAttempts] Use for interstitial and rewarded video. The ads will disable
   /// if the reloading times reach this value. (Prevent breaking Ads provider policy).
   ///
+  /// [isShowConsent] The consent is automatically called when the app needs to show ad,
+  /// if you want to call it before that, you need to set this value to `true`.
+  ///
   /// [debugLog] show verbose debug log if `true`. Default value is `false`.
   void config({
     required bool forceShowAd,
@@ -80,6 +83,7 @@ class AppodealHelper {
     int allowAfterCount = 3,
     int maxAdReloadAttempts = 3,
     bool debugLog = false,
+    bool isShowConsent = false,
   }) {
     if (_isConfiged) return;
     _isConfiged = true;
@@ -98,7 +102,10 @@ class AppodealHelper {
 
     if (_forceShowAd) isAllowedAds = true;
 
-    showConsent();
+    if (isShowConsent) {
+      showConsent()
+          .then((value) => _printDebug('Call showConsent result: $value'));
+    }
 
     _configCompleter.complete(true);
   }
