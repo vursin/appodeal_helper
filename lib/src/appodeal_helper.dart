@@ -27,8 +27,8 @@ class AppodealHelper {
 
   /// Internal variables
   String _appodealKey = '';
-  List<AppodealAdType> _appodealTypes = [];
-  bool _forceShowAd = true;
+  List<AppodealAdType> _appodealAdTypes = [];
+  bool _forceShowAd = false;
   bool _isTestAd = true;
   bool _debugLog = false;
 
@@ -46,42 +46,66 @@ class AppodealHelper {
 
   static const String _prefix = 'AppodealHelper';
 
+  /// Configure for appodeal helper
+  ///
+  /// [forceShowAd] Force to show ad if `true`. Default value is `false`.
+  ///
+  /// [isTestAd] Use test ad if `true`. Default value is `true`.
+  ///
+  /// [keyAndroid] Appodeal key for Android
+  ///
+  /// [keyIOS] Appodeal key for IOS
+  ///
+  /// [appodealAdTypes] Ad types that you want to show in your app
+  ///
+  /// [lastGuard] Last value to check for allowing to show ad or not. It can be a config on
+  /// cloud (if this value is false then all other progress will be false).
+  ///
+  /// [allowAfterCount] Allow the app to show ads after this opening times
+  ///
+  /// [maxAdReloadAttempts] Use for interstitial and rewarded video. The ads will disable
+  /// if the reloading times reach this value. (Prevent breaking Ads provider policy).
+  ///
+  /// [debugLog] show verbose debug log if `true`. Default value is `false`.
   void config({
     required bool forceShowAd,
     required bool isTestAd,
     required String keyAndroid,
     required String keyIOS,
+    required List<AppodealAdType> appodealAdTypes,
 
     /// Last value to check for allowing show ad or not. It can be a config on
     /// cloud (if this value is false then all other progress will be false).
     bool lastGuard = true,
     int allowAfterCount = 3,
-    required List<AppodealAdType> appodealTypes,
-    int maxAdReloadAttemps = 3,
+    int maxAdReloadAttempts = 3,
     bool debugLog = false,
   }) {
     if (_isConfiged) return;
     _isConfiged = true;
 
     _appodealKey = UniversalPlatform.isAndroid ? keyAndroid : keyIOS;
-    _appodealTypes = appodealTypes;
+    _appodealAdTypes = appodealAdTypes;
     _forceShowAd = forceShowAd;
     _isTestAd = isTestAd;
     _debugLog = debugLog;
     _lastGuard = lastGuard;
     _allowAfterCount = allowAfterCount;
-    _maxAdReloadAttempts = maxAdReloadAttemps;
+    _maxAdReloadAttempts = maxAdReloadAttempts;
 
     // Nếu key không được đặt thì không hiện Ads cho platform này
     if (_appodealKey == '' || !isSupportedPlatform) isAllowedAds = false;
 
     if (_forceShowAd) isAllowedAds = true;
 
+    showConsent();
+
     _configCompleter.complete(true);
   }
 
   /// Initial ConsentManager and Appodeal plugin.
-  /// The plugin will automatically call this function when needed.
+  ///
+  /// You dont need to use this method because the plugin will automatically call this method when needed.
   Future<bool> initial() async {
     // Không triển khai ad ở ngoài 2 platform này
     if (_isInitialed) {
@@ -116,7 +140,7 @@ class AppodealHelper {
 
     await Appodeal.initialize(
       appKey: _appodealKey,
-      adTypes: [for (final type in _appodealTypes) type],
+      adTypes: [for (final type in _appodealAdTypes) type],
     );
 
     _printDebug('Appodeal has been initialized');
@@ -149,6 +173,18 @@ class AppodealHelper {
   Future<bool> showAd(AppodealAdType type) async {
     if (!await initial()) return false;
     return Appodeal.show(type);
+  }
+
+  /// Is initialized ad
+  Future<bool> isInitialized(AppodealAdType adType) async {
+    if (!await initial()) return false;
+    return Appodeal.isInitialized(adType);
+  }
+
+  /// Can show ad
+  Future<bool> canShow(AppodealAdType adType) async {
+    if (!await initial()) return false;
+    return Appodeal.canShow(adType);
   }
 
   /// Show rewarded ad = [showAd(AppodealAdType.RewardedVideo)]
@@ -187,18 +223,6 @@ class AppodealHelper {
     _rewaredAttempts = 0;
 
     return isShowed;
-  }
-
-  /// Is initialized ad
-  Future<bool> isInitialized(AppodealAdType adType) async {
-    if (!await initial()) return false;
-    return Appodeal.isInitialized(adType);
-  }
-
-  /// Can show ad
-  Future<bool> canShow(AppodealAdType adType) async {
-    if (!await initial()) return false;
-    return Appodeal.canShow(adType);
   }
 
   /// Show interstitial ad = [showAd(AppodealAdType.Interstitial)]
@@ -246,6 +270,21 @@ class AppodealHelper {
       onInterstitialClosed: onClosed,
       onInterstitialExpired: () => {},
     );
+  }
+
+  /// Consent automatically called when you cal `config`
+  Future<bool> showConsent() async {
+    final completer = Completer<bool>();
+    Appodeal.loadConsentForm(
+        appKey: _appodealKey,
+        onLoaded: () {
+          Appodeal.showConsentForm(
+            onClosed: () => completer.complete(true),
+            onShowFailed: (error) => completer.complete(false),
+          );
+        },
+        onLoadFailed: (error) => completer.complete(false));
+    return completer.future;
   }
 }
 
